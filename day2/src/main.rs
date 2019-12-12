@@ -4,20 +4,39 @@ use std::fs;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let filename = &args[1];
-    let contents = fs::read_to_string(filename).expect("Unable to read file");
-    let results = run(contents.trim().to_string());
-    println!("Results = {}", results);
+    let contents = fs::read_to_string(filename).unwrap().trim().to_string();
+    let target = 19690720;
+    let mut noun = -1;
+    let mut verb = -1;
+    for n in 0..99 {
+        for v in 0..99 {
+            if run(contents.to_owned(), n, v) == target {
+                noun = n;
+                verb = v;
+            }
+        }
+    }
+    let result = 100 * noun + verb;
+    println!("Result = {}", result);
 }
 
-fn run(program: String) -> String {
-    let codes: Vec<i32> = program.split(",").map(|s| s.parse().unwrap()).collect();
+fn parse_program(program: String) -> Vec<i32> {
+    program.split(",").map(|s| s.parse().unwrap()).collect()
+}
+
+fn print_program(program: Vec<i32>) -> String {
+    program.iter().map(i32::to_string).collect::<Vec<String>>().join(",")
+}
+
+fn run(program: String, noun: i32, verb: i32) -> i32 {
+    let mut codes = parse_program(program);
+    codes.splice(1..3, vec![noun, verb]);
     let result = eval_op(codes, 0);
-    let str_codes: Vec<String> = result.iter().map(|i| format!("{}", i)).collect();
-    str_codes.join(",")
+    result.first().unwrap().to_owned()
 }
 
 fn eval_op(program: Vec<i32>, pointer: i32) -> Vec<i32> {
-    let operation= program.get(pointer as usize).expect("Unable to get operation");
+    let operation = program.get(pointer as usize).expect("Unable to get operation");
     if 99.eq(operation) {
         return program;
     }
@@ -38,36 +57,45 @@ fn eval_op(program: Vec<i32>, pointer: i32) -> Vec<i32> {
 
 #[cfg(test)]
 mod tests {
-    use crate::run;
+    use crate::*;
 
     #[test]
     fn example_1() {
         let expected = "3500,9,10,70,2,3,11,0,99,30,40,50".to_string();
-        let actual = run("1,9,10,3,2,3,11,0,99,30,40,50".to_string());
+        let parsed_program = parse_program("1,9,10,3,2,3,11,0,99,30,40,50".to_string());
+        let actual = print_program(eval_op(parsed_program, 0));
         assert_eq!(actual, expected);
     }
+
     #[test]
     fn example_2() {
         let expected = "2,0,0,0,99".to_string();
-        let actual = run("1,0,0,0,99".to_string());
+        let parsed_program = parse_program("1,0,0,0,99".to_string());
+        let actual = print_program(eval_op(parsed_program, 0));
         assert_eq!(actual, expected);
     }
+
     #[test]
     fn example_3() {
         let expected = "2,3,0,6,99".to_string();
-        let actual = run("2,3,0,3,99".to_string());
+        let parsed_program = parse_program("2,3,0,3,99".to_string());
+        let actual = print_program(eval_op(parsed_program, 0));
         assert_eq!(actual, expected);
     }
+
     #[test]
     fn example_4() {
         let expected = "2,4,4,5,99,9801".to_string();
-        let actual = run("2,4,4,5,99,0".to_string());
+        let parsed_program = parse_program("2,4,4,5,99,0".to_string());
+        let actual = print_program(eval_op(parsed_program, 0));
         assert_eq!(actual, expected);
     }
+
     #[test]
     fn example_5() {
         let expected = "30,1,1,4,2,5,6,0,99".to_string();
-        let actual = run("1,1,1,4,99,5,6,0,99".to_string());
+        let parsed_program = parse_program("1,1,1,4,99,5,6,0,99".to_string());
+        let actual = print_program(eval_op(parsed_program, 0));
         assert_eq!(actual, expected);
     }
 }
